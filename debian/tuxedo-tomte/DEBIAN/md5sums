@@ -1,0 +1,10 @@
+111d814dae0d94e7ee661b43cbc769fa  lib/systemd/system/tuxedo-tomte.service
+43cc7712347e876373cc76d0e6c5aed4  lib/systemd/system/tuxedo-tomte.timer
+7008b598f182523a458a120e29f8c023  usr/bin/tuxedo-tomte
+438e1ef4709ad432f2bbd42c371d75d8  usr/share/bash-completion/completions/tuxedo-tomte
+08f460973ba6d1b2d5cfdbaba6830bd6  usr/share/doc/tuxedo-tomte/changelog.gz
+6f398579d98fdf1b3cd325a3a1cd249b  usr/share/doc/tuxedo-tomte/copyright
+225560ddbd8f465e9e7a2d8216e110bb  usr/share/man/man1/tuxedo-tomte.1.gz
+b0eb8f63d2edf35cfe5848e8e3baf9f5  usr/share/tuxedo-tomte/nh5xax-1.aml
+ce778edd7179952935779c8979d32d2f  usr/share/tuxedo-tomte/repolist.txt
+c7754d33836063496fa721d6ccd25ba5  usr/share/tuxedo-tomte/tuxedo-corefix-clevo-nh5xax
