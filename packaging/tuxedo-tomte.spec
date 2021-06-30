@@ -19,7 +19,7 @@
 
 Summary:        Little helper that provides services, updates and fixes for TUXEDO devices
 Name:           %{module}
-Version:        1.0.0
+Version:        1.0.1
 Release:        1
 License:        GPL-3.0+
 Group:          System/Management
