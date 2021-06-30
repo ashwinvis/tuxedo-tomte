@@ -40,6 +40,13 @@ Dies ist ein Meta-Paket und kann ohne Gefahr entfernt werden falls eine
 automatisierte Installation von nützlichen oder notwendigen Paketen für Ihr
 TUXEDO-Gerät nicht erwünscht wird.
 
+%prep
+%setup -q
+
+%build
+
+%install
+
 %files
 %defattr(-,root,root)
 %license LICENSE
