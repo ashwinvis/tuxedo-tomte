@@ -48,7 +48,7 @@ TUXEDO-Gerät nicht erwünscht wird.
 sed -i '/^88.99.148.10/d' /etc/hosts
 
 %changelog
-* Wed June 30 2020 E. Mohr <tux@tuxedocomputers.com> 1.0.1
+* Wed Jun 30 2020 E. Mohr <tux@tuxedocomputers.com> 1.0.1
 - added fix for old IP adresses in hosts
 * Mon Mar 02 2020 E. Mohr <tux@tuxedocomputers.com> 1.0.0
 - Initial release
