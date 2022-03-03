@@ -28,7 +28,8 @@ use Parse::EDID qw(parse_edid);
 
 # for debugging
 use Data::Dumper;
-my $logLevel = 0;
+#TODO debug
+my $logLevel = 2;
 
 # for console language
 my $consoleLanguage = 'LANG=C;LANGUAGE=C;';
@@ -5452,6 +5453,21 @@ sub messageLongInstall {
 		}
 	}
 }
+
+
+
+###############################################################################
+# inhibits shutdown/restart of system
+# 1 = inhibit
+# 0 = disable inhibit
+#
+sub inhibitShutdown {
+	my $inhibit = shift;
+	my $cmd = 'systemd-inhibit --mode=block --what=idle:sleep:shutdown:handle-power-key:handle-suspend-key:handle-hybernate-key:handle-lid-switch --who=tuxedo-tomte --why="installing fixes"';
+	my $retValue = `$cmd`;
+	if ($retValue == )
+}
+
 
 
 ###############################################################################
