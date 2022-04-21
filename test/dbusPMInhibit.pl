@@ -2,12 +2,15 @@
 use Net::DBus;
 use IO::Handle;
 use Scalar::Util qw(openhandle);
-#my $bus = Net::DBus->system;
 my $bus = Net::DBus->session;
 my $svc = $bus->get_service('org.freedesktop.PowerManagement');
 my $obj = $svc->get_object('/org/freedesktop/PowerManagement', 'org.freedesktop.PowerManagement.Inhibit');
 print "hasinhibit: $obj->HasInhibit()\n";
-my $id = $obj->Inhibit('appname', 'dialog-information');
+
+
+my $id = new IO::Handle;
+$id = IO::Handle->new();
+$id = $obj->Inhibit('tuxedo-tomte', 'making updates');
 print "hasinhibit: $obj->HasInhibit()\n";
 
 #print "before get_service\n";
@@ -24,16 +27,16 @@ print "hasinhibit: $obj->HasInhibit()\n";
 #	print $dev, "\n";
 #}
 
-#my $id = new IO::Handle;
-#my $id = IO::Handle->new();
-#$id = $obj->Inhibit('shutdown:sleep:idle:handle-power-key:handle-suspend-key:handle-hibernate-key:handle-lid-switch', 'tuxedo-tomte', 'installing fixes', 'block');
+#$id = $obj->Inhibit('shutdown:sleep', 'tuxedo-tomte', 'installing fixes', 'block');
 
 #$obj->Reboot(1);
 
-#if ($id->opened()) {
-#	print "open\n";
-#}
+open($id);
 
-#print "ID: $id\n";
-print "enter: ";
+if ($id->opened()) {
+	print "open\n";
+}
+
+print "ID: $id\n";
+print "system reboot blocked, press enter to release";
 my $input = <STDIN>;
