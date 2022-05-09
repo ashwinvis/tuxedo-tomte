@@ -5,10 +5,15 @@ use warnings;
 # for debugging
 use Data::Dumper;
 use File::Basename;
+use File::Path;
+use File::Copy;
+use Cwd qw(getcwd);
 
 my $keyfile = '/home/pablo/.ssh/pablohome';
 my @fileList;
 my @fileListWithPath;
+my $zipFiles = 0;
+my $tmpDir = '/tmp/repoupload/';
 my $argument;
 my $flavour = '';
 my $repo = '';
@@ -17,6 +22,11 @@ my $errorValue;
 my %repos = (
 	test => 'testdeb-tuxedo',
 	live => 'deb-tuxedo');
+
+sub usage {
+	print "usage:\n";
+	print "tuxedoUpload.pl [bionic|focal|jammy] [test|live] file1.deb file1.zip\n";
+}
 
 if (! -e $keyfile) {
 	print "keyfile $keyfile does not exist\n";
@@ -32,6 +42,7 @@ if (! -e $keyfile) {
 
 if (@ARGV == 0) {
 	print "no arguments given\n";
+	usage();
 	exit (0);
 }
 
@@ -40,28 +51,50 @@ foreach $argument (@ARGV) {
 		$flavour = $argument;
 	} elsif ($argument =~ /(^test$|^live$)/) {
 		$repo = $argument;
-	} elsif (($argument =~ /\.deb/) && (-e $argument)) {
-		print "valid file: $argument found\n";
+	} elsif (($argument =~ /^.*\.deb$/) && (-e $argument)) {
+		print "valid deb-file: $argument found\n";
 		push @fileListWithPath, $argument;
 		push @fileList, basename($argument);
+	} elsif (($argument =~ /^.*\.zip$/) && (-e $argument)) {
+		print "valid zip-file: $argument found\n";
+		if (! -e $tmpDir) {
+			mkdir($tmpDir);
+		} else {
+			print "can't create $tmpdir to unzip files\n";
+			exit (0);
+		}
+		`unzip -j $argument "*.deb" -d $tmpDir`;
+		$zipFiles = 1;
 	} else {
-		print "$argument is not a deb-file or valid command\n";
+		print "$argument is not a deb-file/zip-file or valid command\n";
+		usage();
 		exit (0);
 	}
 }
 
 if ($flavour eq '') {
 	print "no valid flavour given [bionic|focal|jammy]\n";
+	usage();
 	exit (0);
 }
 if ($repo eq '') {
 	print "no valid repo given [test|live]\n";
+	usage();
 	exit (0);
 }
+
+if ($zipFiles) {
+	#TODO replace filesearch
+	my $fileUtil = File::Util->new;
+	push (@fileListWithPath, $fileUtil->list_dir($tmpDir, '--with-paths', '--no-fsdots');
+	push (@fileList, $fileUtil->list_dir($tmpDir, '--no-fsdots');
+}
+
 print "Repo: $repos{$repo}\n";
 print "Flavour: $flavour\n";
 if (@fileListWithPath == 0) {
 	print "no valid files to transmit given [.deb]\n";
+	usage();
 	exit (0);
 }
 
