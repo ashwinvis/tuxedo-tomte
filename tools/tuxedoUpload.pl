@@ -1,4 +1,7 @@
 #!/usr/bin/perl -w
+# needs ubuntu package libnet-openssh-perl and libexpect-perl
+# change $keyFile to your private key to access root@px02
+
 use strict qw(vars subs);
 use warnings;
 
@@ -8,8 +11,21 @@ use File::Basename;
 use File::Path;
 use File::Copy;
 use Cwd qw(getcwd);
+use Net::OpenSSH;
+use Expect;
+use Term::ReadKey;
 
-my $keyfile = '/home/pablo/.ssh/pablohome';
+# for expect
+select STDOUT; $| = 1;
+select STDERR; $| = 1;
+#TODO debug
+my $debug = 1;
+my $timeout = 20;
+my $repoPassword = 'test';
+my $pty;
+my $pid;
+
+my $keyFile = '/home/pablo/.ssh/pablohome';
 my @fileList;
 my @fileListWithPath;
 my $zipFiles = 0;
@@ -21,6 +37,7 @@ my $repo = '';
 my $retValue;
 my $errorValue;
 my $testing = 0;
+my $keyFilePassword;
 my %repos = (
 	testdeb => 'testdeb-tuxedo',
 	live => 'deb-tuxedo');
@@ -31,8 +48,29 @@ sub usage {
 	print "multiple flavours are possible";
 }
 
-if (! -e $keyfile) {
-	print "keyfile $keyfile does not exist\n";
+# prompt for password without showing in the terminal
+sub promptForPassword {
+	# Tell the terminal not to show the typed chars
+	Term::ReadKey::ReadMode('noecho');
+
+	print "Type in the password for the repository: ";
+	my $password = Term::ReadKey::ReadLine(0);
+
+	# Rest the terminal to what it was previously doing
+	Term::ReadKey::ReadMode('restore');
+
+	# The one you typed didn't echo!
+	print "\n";
+
+	# get rid of that pesky line ending
+	$password =~ s/\R\z//;
+
+	# say "Password was <$password>";
+	return $password;
+}
+
+if (! -e $keyFile) {
+	print "keyfile $keyFile does not exist\n";
 	print "please do the following to create a keyfile:\n";
 	print "ssh-keygen -t rsa -b 4096 -f [somename]\n";
 	print "copy the public key [somename.pub] on to the server\n";
@@ -111,34 +149,49 @@ if (@fileListWithPath == 0) {
 	exit (0);
 }
 
+my $ssh = Net::OpenSSH->new('px02.tuxedo.de',
+							user=>'root',
+							key_path=>$keyFile);
+$ssh->error and die "SSH connection failed: " . $ssh->error;
+
 # copy files to server
-my $cmd = "scp -i $keyfile @fileListWithPath root\@px02.tuxedo.de:/mnt/repos/$repos{$repo}/ubuntu/incoming/";
-print "cmd: $cmd\n";
+print "copy @fileListWithPath to /mnt/repos/$repos{$repo}/ubuntu/incoming/\n";
 
 if (! $testing) {
-	$retValue = `$cmd`;
-	$errorValue = ${^CHILD_ERROR_NATIVE};
+	$ssh->scp_put(@fileListWithPath, "/mnt/repos/$repos{$repo}/ubuntu/incoming/");
 	rmdir($tmpDir);
-	if ($errorValue != 0) {
-		print "some error has happened while uploading\n";
-		print "error value: $errorValue\n";
-		print "return value:\n$retValue";
-		exit (0);
-	}
+	$ssh->error and die "scp failed: ".$ssh->error;
+	print "all files copied to remote\n";
 }
+
+$repoPassword = promptForPassword();
 
 # execute reprepro
 foreach $flavour (@flavours) {
-	$cmd = "ssh -i $keyfile root\@px02.tuxedo.de \"cd /mnt/repos/$repos{$repo}/ubuntu/ && reprepro --ask-passphrase -V includedeb $flavour @fileList\"";
-	print "cmd: $cmd\n";
+	#$cmd = "ssh -i $keyFile root\@px02.tuxedo.de \"cd /mnt/repos/$repos{$repo}/ubuntu/ && reprepro --ask-passphrase -V includedeb $flavour @fileList\"";
+	
 	if (! $testing) {
-		$retValue = `$cmd`;
-		$errorValue = ${^CHILD_ERROR_NATIVE};
-		if ($errorValue != 0) {
-			print "some error has happened while executing remote command\n";
-			print "error value: $errorValue\n";
-			print "return value:\n$retValue";
-			exit (0);
+		print "cmd: cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList\n";
+		($pty, $pid) = $ssh->open2pty("cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
+			or die "open2pty failed: " . $ssh->error . "\n";
+		my $expect = Expect->init($pty);
+		$expect->raw_pty(1);
+		$debug and $expect->log_user(1);
+
+		$debug and print "waiting for password prompt\n";
+		$expect->expect($timeout, 'Passphrase:')
+    		or die "expect failed\n";
+		$debug and  print "prompt seen\n";
+
+		$expect->send("$repoPassword\n");
+		$debug and print "repo password sent\n";
+
+		$expect->expect($timeout, 'root@px02')
+    		or die "bad repo password\n";
+		$debug and print "repo password ok\n";
+
+		while(<$pty>) {
+    		print "$. $_"
 		}
 	}
 }
