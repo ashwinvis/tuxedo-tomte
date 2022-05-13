@@ -167,31 +167,42 @@ if (! $testing) {
 $repoPassword = promptForPassword();
 
 # execute reprepro
+my $firstFlavour = 1;
+my $expect;
 foreach $flavour (@flavours) {
 	#$cmd = "ssh -i $keyFile root\@px02.tuxedo.de \"cd /mnt/repos/$repos{$repo}/ubuntu/ && reprepro --ask-passphrase -V includedeb $flavour @fileList\"";
 	
 	if (! $testing) {
 		print "cmd: cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList\n";
-		($pty, $pid) = $ssh->open2pty("cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
-			or die "open2pty failed: " . $ssh->error . "\n";
-		my $expect = Expect->init($pty);
-		$expect->raw_pty(1);
-		$debug and $expect->log_user(1);
+		if ($firstFlavour) {
+			$firstFlavour = 0;
+			($pty, $pid) = $ssh->open2pty("cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
+				or die "open2pty failed: " . $ssh->error . "\n";
+			$expect = Expect->init($pty);
+			$expect->raw_pty(1);
+			$debug and $expect->log_user(1);
 
-		$debug and print "waiting for password prompt\n";
-		$expect->expect($timeout, 'Passphrase:')
-    		or die "expect failed\n";
-		$debug and  print "prompt seen\n";
+			$debug and print "waiting for password prompt\n";
+			if ($expect->expect($timeout, 'Passphrase:')) {
+				$debug and  print "prompt seen\n";
 
-		$expect->send("$repoPassword\n");
-		$debug and print "repo password sent\n";
+				$expect->send("$repoPassword\n");
+				$debug and print "repo password sent\n";
+			} else {
+				print "no password requested\n";
+			}
+		} else {
+			$expect->send("cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
+				or die "next reprepro command failed: " . $ssh->error . "\n";
+		}
 
-		$expect->expect($timeout, 'root@px02')
+		$expect->expect($timeout, 'InRelease.new')
     		or die "bad repo password\n";
 		$debug and print "repo password ok\n";
 
 		while(<$pty>) {
-    		print "$. $_"
+    		print "$. $_";
 		}
+		$expect->soft_close();
 	}
 }
