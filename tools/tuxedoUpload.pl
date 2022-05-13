@@ -15,16 +15,6 @@ use Net::OpenSSH;
 use Expect;
 use Term::ReadKey;
 
-# for expect
-select STDOUT; $| = 1;
-select STDERR; $| = 1;
-#TODO debug
-my $debug = 1;
-my $timeout = 20;
-my $repoPassword = 'test';
-my $pty;
-my $pid;
-
 my $keyFile = '/home/pablo/.ssh/pablohome';
 my @fileList;
 my @fileListWithPath;
@@ -38,6 +28,7 @@ my $retValue;
 my $errorValue;
 my $testing = 0;
 my $keyFilePassword;
+my $repoPassword;
 my %repos = (
 	testdeb => 'testdeb-tuxedo',
 	live => 'deb-tuxedo');
@@ -49,6 +40,7 @@ sub usage {
 }
 
 # prompt for password without showing in the terminal
+# for repo gpg password
 sub promptForPassword {
 	# Tell the terminal not to show the typed chars
 	Term::ReadKey::ReadMode('noecho');
@@ -67,6 +59,51 @@ sub promptForPassword {
 
 	# say "Password was <$password>";
 	return $password;
+}
+
+# remoteReprepro($ssh, $repo, $flavour, @files)
+sub remoteReprepro {
+	select STDOUT; $| = 1;
+	select STDERR; $| = 1;
+	#TODO debug
+	my $debug = 1;
+	my $timeout = 20;
+	my $pty;
+	my $pid;
+	my $expect;
+	my $ssh;
+	my $repo;
+	my $flavour;
+	my @fileList;
+	($ssh, $repo, $flavour, @fileList) = @_;
+	print "cmd: cd /mnt/repos/$repo/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList\n";
+	if ($testing) {
+		return (1);
+	}
+	($pty, $pid) = $ssh->open2pty("cd /mnt/repos/$repo/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
+		or die "open2pty failed: " . $ssh->error . "\n";
+	$expect = Expect->init($pty);
+	$expect->raw_pty(1);
+	$debug and $expect->log_user(1);
+
+	$debug and print "waiting for password prompt\n";
+	if ($expect->expect($timeout, 'Passphrase:')) {
+		$debug and  print "prompt seen\n";
+
+		$expect->send("$repoPassword\n");
+		$debug and print "repo password sent\n";
+		$expect->expect($timeout, -re=>'InRelease\.new')
+   			or print "did not receive 'InRelease.new', wrong password?\n";
+		$debug and print "repo password ok\n";
+		while(<$pty>) {
+			print "$. $_";
+		}
+	} else {
+		print "no password requested\n";
+	}
+	print "no further info, remote program execution finished\n";
+	$expect->soft_close();
+	close ($pty);
 }
 
 if (! -e $keyFile) {
@@ -167,43 +204,6 @@ if (! $testing) {
 $repoPassword = promptForPassword();
 
 # execute reprepro
-my $firstFlavour = 1;
-my $expect;
 foreach $flavour (@flavours) {
-	#$cmd = "ssh -i $keyFile root\@px02.tuxedo.de \"cd /mnt/repos/$repos{$repo}/ubuntu/ && reprepro --ask-passphrase -V includedeb $flavour @fileList\"";
-	
-	if (! $testing) {
-		print "cmd: cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList\n";
-		if ($firstFlavour) {
-			$firstFlavour = 0;
-			($pty, $pid) = $ssh->open2pty("cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
-				or die "open2pty failed: " . $ssh->error . "\n";
-			$expect = Expect->init($pty);
-			$expect->raw_pty(1);
-			$debug and $expect->log_user(1);
-
-			$debug and print "waiting for password prompt\n";
-			if ($expect->expect($timeout, 'Passphrase:')) {
-				$debug and  print "prompt seen\n";
-
-				$expect->send("$repoPassword\n");
-				$debug and print "repo password sent\n";
-			} else {
-				print "no password requested\n";
-			}
-		} else {
-			sleep(2);
-			$expect->send("cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
-				or die "next reprepro command failed: " . $ssh->error . "\n";
-		}
-
-		$expect->expect($timeout, -re=>'InRelease\.new')
-    		or die "bad repo password\n";
-		$debug and print "repo password ok\n";
-
-		#while(<$pty>) {
-		#	print "$. $_";
-		#}
-	}
+	remoteReprepro($ssh, $repos{$repo}, $flavour, @fileList);
 }
-$expect->soft_close();
