@@ -192,11 +192,12 @@ foreach $flavour (@flavours) {
 				print "no password requested\n";
 			}
 		} else {
+			sleep(2);
 			$expect->send("cd /mnt/repos/$repos{$repo}/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
 				or die "next reprepro command failed: " . $ssh->error . "\n";
 		}
 
-		$expect->expect($timeout, "InRelease.new")
+		$expect->expect($timeout, qr"InRelease.new")
     		or die "bad repo password\n";
 		$debug and print "repo password ok\n";
 
