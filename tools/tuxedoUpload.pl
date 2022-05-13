@@ -197,7 +197,7 @@ foreach $flavour (@flavours) {
 				or die "next reprepro command failed: " . $ssh->error . "\n";
 		}
 
-		$expect->expect($timeout, qr"InRelease.new")
+		$expect->expect($timeout, -re=>'InRelease\.new')
     		or die "bad repo password\n";
 		$debug and print "repo password ok\n";
 
