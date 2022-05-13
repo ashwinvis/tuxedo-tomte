@@ -200,9 +200,9 @@ foreach $flavour (@flavours) {
     		or die "bad repo password\n";
 		$debug and print "repo password ok\n";
 
-		while(<$pty>) {
-    		print "$. $_";
-		}
+		#while(<$pty>) {
+		#	print "$. $_";
+		#}
 	}
 }
 $expect->soft_close();
