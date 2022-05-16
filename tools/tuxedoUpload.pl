@@ -32,6 +32,7 @@ my $repoPassword;
 my %repos = (
 	testdeb => 'testdeb-tuxedo',
 	live => 'deb-tuxedo');
+my $language = 'LANG=C;LANGUAGE=C;';
 
 sub usage {
 	print "usage:\n";
@@ -76,11 +77,11 @@ sub remoteReprepro {
 	my $flavour;
 	my @fileList;
 	($ssh, $repo, $flavour, @fileList) = @_;
-	print "cmd: cd /mnt/repos/$repo/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList\n";
+	print "cmd: $language cd /mnt/repos/$repo/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList\n";
 	if ($testing) {
 		return (1);
 	}
-	($pty, $pid) = $ssh->open2pty("cd /mnt/repos/$repo/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
+	($pty, $pid) = $ssh->open2pty("$language cd /mnt/repos/$repo/ubuntu/; reprepro --ask-passphrase -V includedeb $flavour @fileList")
 		or die "open2pty failed: " . $ssh->error . "\n";
 	$expect = Expect->init($pty);
 	$expect->raw_pty(1);
