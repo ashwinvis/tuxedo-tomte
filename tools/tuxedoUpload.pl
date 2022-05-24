@@ -91,6 +91,8 @@ sub remoteReprepro {
 	if ($expect->expect($timeout, 'Passphrase:')) {
 		$debug and  print "prompt seen\n";
 
+		print "check password: >$repoPassword<\n";
+		sleep(3);
 		$expect->send("$repoPassword\n");
 		$debug and print "repo password sent\n";
 		$expect->expect($timeout, -re=>'InRelease\.new')
