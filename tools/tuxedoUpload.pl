@@ -125,6 +125,7 @@ if (@ARGV == 0) {
 	exit (0);
 }
 
+my $tmpDirChecked = 0;
 foreach $argument (@ARGV) {
 	if ($argument =~ /(^test$)/) {
 		$testing = 1;
@@ -140,11 +141,19 @@ foreach $argument (@ARGV) {
 		push @fileList, "incoming/$argument";
 	} elsif (($argument =~ /^.*\.zip$/) && (-e $argument)) {
 		print "valid zip-file: $argument found\n";
-		if (! -e $tmpDir) {
-			mkdir($tmpDir);
-		} else {
-			print "can't create $tmpDir to unzip files\n";
-			exit (0);
+		if ($tmpDirChecked == 0) {
+			if (! -e $tmpDir) {
+				mkdir($tmpDir);
+			} else {
+				print "$tmpDir found, deleting and recreating\n";
+				rmtree($tmpDir);
+				if (-e $tmpDir) {
+					print "could not delete $tmpDir!\n";
+					exit (0);
+				}
+				mkdir($tmpDir);
+			}
+			$tmpDirChecked = 1;
 		}
 		`unzip -j $argument "*.deb" -d $tmpDir`;
 		$zipFiles = 1;
@@ -200,6 +209,8 @@ if (! $testing) {
 	rmdir($tmpDir);
 	$ssh->error and die "scp failed: ".$ssh->error;
 	print "all files copied to remote\n";
+} else {
+	exit (0);
 }
 
 $repoPassword = promptForPassword();
