@@ -990,8 +990,17 @@ my %tuxedo_devices = (
 		display => 'AUO Model 21229 Serial Number 808797180',
 		usb_device => '',
 	},
-
-
+	'48' => {
+		model => ['TUXEDO InfinityBook S 14 Gen6'],
+		board_name => ['L14xMU'],
+		fix => ['forceusbroothubson'],
+		flavour => ['18.04', '20.04', '22.04'],
+		pci_id => '2646:500f',
+		cpu => '',
+		kernel => '',
+		display => '',
+		usb_device => '',
+	},
 );
 
 
@@ -1763,6 +1772,22 @@ my %origConfModules = (
 		reconfigure => '',
 		restart => 'yes',
 	},
+	forceusbroothubson => {
+		name => 'force-usb-root-hubs-on',
+		version => 1,
+		installed => 'no',
+		blocked => 'no',
+		required => 'no',
+		hwid => 1,
+		package => 'no',
+		fainame => '',
+		description => '',
+		postconf => '',
+		upgrade => '',
+		upgraded => '',
+		reconfigure => '',
+		restart => 'yes',
+	},
 
 
 );
@@ -2258,6 +2283,14 @@ sub checkRequirements {
 	if ( findPciDevice($lspciOutput, @cardreaderDevices) ) {
 		$origConfModules{cardreaderfix}{required} = 'yes';
 		printLog('detected cardreader-fix issue', 'L1');
+	}
+	# if Kingston NV1 SSD found
+	if ($boardname =~ m/L14xMU/) {
+		my @kingstonNV1Devices = (qr/2646:500f/);
+		if ( findPciDevice($lspciOutput, @kingstonNV1Devices) ) {
+			$origConfModules{forceusbroothubson}{required} = 'yes';
+			printLog('detected force-usb-root-hubs-on issue', 'L1');
+		}
 	}
 
 }
@@ -4679,6 +4712,40 @@ sub cardreaderfix() {
 }
 
 
+###############################################################################
+#TODO description
+# - if USB device 2646:500f detected
+#
+sub forceusbroothubson() {
+	my $module = shift;
+	my $action = shift;
+	my $retval1;
+	my $fileName1 = '/etc/udev/rules.d/45-tuxedo-force-usb-root-hubs-on.rules';
+	my $niceTime = getBackupFileTime();
+	my $fileText1 = "# added by tuxedo-tomte ".$niceTime."\n".
+		"SUBSYSTEM==\"usb\", ACTION==\"add\", ATTR{idVendor}==\"1d6b\", ATTR{idProduct}==\"0001\", RUN+=\"/bin/sh -c 'echo on > /sys/bus/usb/devices/\$kernel/power/control'\"\n".
+		"SUBSYSTEM==\"usb\", ACTION==\"add\", ATTR{idVendor}==\"1d6b\", ATTR{idProduct}==\"0002\", RUN+=\"/bin/sh -c 'echo on > /sys/bus/usb/devices/\$kernel/power/control'\"\n".
+		"SUBSYSTEM==\"usb\", ACTION==\"add\", ATTR{idVendor}==\"1d6b\", ATTR{idProduct}==\"0003\", RUN+=\"/bin/sh -c 'echo on > /sys/bus/usb/devices/\$kernel/power/control'\"\n";
+	if ($action eq 'install') {
+		printLog("applying $origConfModules{$module}{name}", 'L1');
+		$retval1 = createFile($fileName1, $fileText1, 1);
+		if ($retval1 == 0) {
+			$origConfModules{$module}{installed} = "failed";
+			addToConfiguredModules($module, "failed");
+		} else {
+			$origConfModules{$module}{installed} = "yes";
+			$origConfModules{$module}{upgraded} = "yes";
+			addToConfiguredModules($module, "success");
+			$restartSystem = 1;
+		}
+	}
+	if ($action eq 'upgrade') {
+		# not implemented yet
+	}
+	if ($action eq 'remove') {
+		# not implemented yet
+	}
+}
 
 
 
