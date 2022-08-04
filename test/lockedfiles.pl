@@ -20,35 +20,43 @@ my $lockFrontendFH;
 my $allLocked = 1;
 
 sub fileLock {
-	my ($file, $FH) = @_; 
-	if (open $FH, '+<', $file) {
+	my ($file) = @_;
+	my $FH;	
+	if (open ($FH, '+<', $file)) {
 		if (flock($FH, LOCK_EX)) {
 			print "got lock for $file\n";
 		} else {
-		   print "cant get lock for $file $!\n";
-		   return (0);
+			print "cant get lock for $file $!\n";
+			return undef;
 		}
 		print "lock successful for $file\n";
-		return (1);
+		return ($FH);
 	} else {
 		print "open for $file not possible\n";
-		return (0);
+		return undef;
 	}
 }
 
 sub closeLock {
-	my $FH;
-	if(!close($FH)) {
-		print "could not close filehandle\n";
+	my $FH = shift;
+	if (defined $FH) {
+		if(close($FH)) {
+			print "closed filehandle\n";
+		} else {
+			print "unable to close filehandle\n";
+		}
+	} else {
+		print "filehandle is not defined\n";
 	}
 }
 
-fileLock($aptArchives, $aptArchivesFH);
-fileLock($aptLists, $aptListsFH);
-fileLock($libDpkg, $libDPKGFH);
-fileLock($lockFrontend, $lockFrontendFH);
+$aptArchivesFH = fileLock($aptArchives);
+$aptListsFH = fileLock($aptLists);
+$libDPKGFH = fileLock($libDpkg);
+$lockFrontendFH = fileLock($lockFrontend);
 
-sleep(3);
+print "press key: \n";
+<STDIN>;
 
 closeLock($aptArchivesFH);
 closeLock($aptListsFH);
