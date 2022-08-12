@@ -11,7 +11,7 @@ my $file = '/var/lib/dpkg/lock-frontend';
 my $FH;
 
 if (open ($FH, '>>', $file)) {
-	if (flock($FH, LOCK_EX)) {
+	if (flock($FH, LOCK_EX | LOCK_NB)) {
 		print "got lock for $file\n";
 	} else {
 		print "cant get lock for $file $!\n";
