@@ -793,6 +793,22 @@ my %origConfModules = (
 		reconfigure => '',
 		restart => 'yes',
 	},
+	wakeupsamsungssd => {
+		name => 'wakeupsamsungssd',
+		version => 1,
+		installed => 'no',
+		blocked => 'no',
+		required => 'no',
+		hwid => 1,
+		package => 'no',
+		fainame => '',
+		description => 'Fixes wakeup on Samsung SSD',
+		postconf => '',
+		upgrade => '',
+		upgraded => '',
+		reconfigure => '',
+		restart => 'yes',
+	},
 
 );
 
