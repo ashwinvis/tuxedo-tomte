@@ -9,16 +9,12 @@ use Data::Dumper qw(Dumper);
 
 my $aptArchives = '/var/cache/apt/archives/lock';
 my $aptListsLock = '/var/lib/apt/lists/lock';
-#my $aptLists = '/var/lib/apt/lists/';
 my $libDpkgLock = '/var/lib/dpkg/lock';
-#my $libDpkg = '/var/lib/dpkg/';
 my $lockFrontend = '/var/lib/dpkg/lock-frontend';
 
 my $aptArchivesFH;
 my $aptListsLockFH;
-#my $aptListsFH;
 my $libDPKGLockFH;
-#my $libDPKGFH;
 my $lockFrontendFH;
 
 my $allLocked = 1;
@@ -58,9 +54,7 @@ sub closeLock {
 
 $aptArchivesFH = fileLock($aptArchives);
 $aptListsLockFH = fileLock($aptListsLock);
-#$aptListsFH = fileLock($aptLists);
 $libDPKGLockFH = fileLock($libDpkgLock);
-#$libDPKGFH = fileLock($libDpkg);
 $lockFrontendFH = fileLock($lockFrontend);
 
 print "press key: \n";
@@ -68,9 +62,7 @@ print "press key: \n";
 
 closeLock($aptArchivesFH);
 closeLock($aptListsLockFH);
-#closeLock($aptListsFH);
 closeLock($libDPKGLockFH);
-#closeLock($libDPKGFH);
 closeLock($lockFrontendFH);
 
 

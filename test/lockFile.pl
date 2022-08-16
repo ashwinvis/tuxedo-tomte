@@ -10,7 +10,7 @@ use Data::Dumper qw(Dumper);
 my $file = '/var/lib/dpkg/lock-frontend';
 my $FH;
 
-if (open ($FH, '>>', $file)) {
+if (open ($FH, '+>', $file)) {
 	if (flock($FH, LOCK_EX | LOCK_NB)) {
 		print "got lock for $file\n";
 	} else {
