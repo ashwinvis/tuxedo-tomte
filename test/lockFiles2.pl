@@ -33,7 +33,7 @@ sub acquire_lock {
   my $fh;
   sysopen($fh, $fn, O_RDWR | O_CREAT) or die "failed to open: $fn: $!";
   $fh->autoflush(1);
-  print "acquiring lock: $fn";
+  print "acquiring lock: $fn\n";
   my $fs = new File::FcntlLock;
   $fs->l_type( F_WRLCK );
   $fs->l_whence( SEEK_SET );
@@ -100,8 +100,16 @@ sub closeLock {
 ($lockFrontendFH, $someNumber) = acquire_lock($lockFrontend);
 
 
-print "press key: \n";
+print "press key to start apt: \n";
 <STDIN>;
+
+my $output = `apt-get install geeqie`;
+print "output: $output\n";
+
+print "press key to start apt: \n";
+<STDIN>;
+
+
 
 release_lock($lockFrontend, $lockFrontendFH, 3, $someNumber);
 
