@@ -7970,6 +7970,26 @@ if (@ARGV != 0) {
 		setMode('AUTOMATIC');
 		prepareValues();
 		prerequisitesFAI();
+
+my $result = `ip link show`;
+print "ip link show\n";
+print "$result\n";
+$result = `curl -I www.tuxedocomputers.com`;
+print "curl\n";
+print "$result\n";
+$result = `systemd-resolve --status`;
+print "resolve\n";
+print "$result\n";
+$result = `dig mirrors.tuxedocomputers.com`;
+print "dig\n";
+print "$result\n";
+$result = `dig deb.tuxedocomputers.com`;
+print "dig\n";
+print "$result\n";
+`cat /etc/resolv.conf`;
+`cat /etc/hosts`;
+
+
 		configureAllModules();
 		postrequisitesFAI();
 		postConfigure();
